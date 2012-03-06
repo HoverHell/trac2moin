@@ -42,6 +42,8 @@ parser.add_option('-p', '--prefix', dest='prefix',
                   help='A prefix to give all pages in the new wiki')
 parser.add_option('-i', '--inlinefixups', dest='inlinefixups',
                   help='Fix up wiki syntax inline (i.e. each version) rather than with a new revision at the end')
+parser.add_option('-f', '--fixupuser', dest='fixupuser',
+                  help='When not doing inline fixups, what username should be used? (default: trac2moin)')
 parser.add_option('-o', '--output', dest='output',
                   help='Output path.')
 
@@ -56,10 +58,15 @@ from trac.util.datefmt import utc
 
 class ConvertWiki:
 
-    def __init__(self, project=options.project, output=options.output, namemapfile=options.namemap, usermapfile=options.usermap, inlinefixups=options.inlinefixups, prefix=options.prefix):
+    def __init__(self, project=options.project, output=options.output,
+                 namemapfile=options.namemap, usermapfile=options.usermap,
+                 inlinefixups=options.inlinefixups, fixupuser=options.fixupuser,
+                 prefix=options.prefix):
         self.env = open_environment(project)
         if output is None:
           output = "./moin/"
+        if fixupuser is None:
+          fixupuser = "trac2moin"
 
         namemap = {}
         if namemapfile:
@@ -231,7 +238,7 @@ class ConvertWiki:
             f.write("\n")
             f.close()
             
-            writelog(pagedir, time.time(), i, pagename, "127.0.0.1", "coling", "Fix wiki syntax after Trac import")
+            writelog(pagedir, time.time(), i, pagename, "127.0.0.1", fixupuser, "Fix wiki syntax after Trac import")
 
           cursor2.close()
         cursor.close()
