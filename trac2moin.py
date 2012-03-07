@@ -124,7 +124,7 @@ class ConvertWiki:
           return re.sub("-", "(2d)", re.sub("/", "(2f)", name))
 
 
-        def writelog(pagedir, timestamp, rev, pagename, ipnr, author, comment, filename=None):
+        def writelog(pagedir, timestamp, rev, pagename, ipnr, author, comment, attachedfilename=None):
           lines=[]
           filename=os.path.join(pagedir, "edit-log")
           if os.path.exists(filename):
@@ -132,10 +132,10 @@ class ConvertWiki:
             lines = f.readlines()
             f.close()
 
-          if filename is None:
+          if attachedfilename is None:
             lines.append("%d000000\t%08d\tSAVE\t%s\t%s\t%s\t%s\n" % (timestamp, rev, pagename, ipnr, author, comment))
           else:
-            lines.append("%d000000\t%08d\tATTNEW\t%s\t%s\t%s\t%s\t%s\n" % (timestamp, rev, pagename, ipnr, author, comment, filename))
+            lines.append("%d000000\t%08d\tATTNEW\t%s\t%s\t%s\t%s\t%s\n" % (timestamp, rev, pagename, ipnr, author, comment, attachedfilename))
           lines.sort()
           f = open(filename, "w")
           f.write("".join(lines))
