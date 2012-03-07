@@ -38,6 +38,8 @@ parser.add_option('-n', '--namemap', dest='namemap',
                   help='A file containing a map of oldname|newname.')
 parser.add_option('-u', '--usermap', dest='usermap',
                   help='A file containing a map of olduser|newuser.')
+parser.add_option('-s', '--usersuffix', dest='usersuffix',
+                  help='A suffix to apply to users not in usermap')
 parser.add_option('-p', '--prefix', dest='prefix',
                   help='A prefix to give all pages in the new wiki')
 parser.add_option('-i', '--inlinefixups', dest='inlinefixups',
@@ -59,7 +61,8 @@ from trac.util.datefmt import utc
 class ConvertWiki:
 
     def __init__(self, project=options.project, output=options.output,
-                 namemapfile=options.namemap, usermapfile=options.usermap,
+                 namemapfile=options.namemap,
+                 usermapfile=options.usermap, usersuffix=options.usersuffix,
                  inlinefixups=options.inlinefixups, fixupuser=options.fixupuser,
                  prefix=options.prefix):
         self.env = open_environment(project)
@@ -115,7 +118,7 @@ class ConvertWiki:
         def translateuser(user):
           if usermap.has_key(user):
             return usermap[user]
-          return user
+          return re.sub("[^A-Za-z0-9_]", "_", "%s%s" % (user, usersuffix))
 
         def moinname(name):
           return re.sub("-", "(2d)", re.sub("/", "(2f)", name))
