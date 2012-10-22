@@ -31,6 +31,12 @@ import shutil
 import time
 from optparse import OptionParser
 
+
+## Haxfix
+reload(sys)
+sys.setdefaultencoding('utf-8')
+
+
 parser = OptionParser()
 parser.add_option('-t', '--trac', dest='project',
                   help='Path to the Trac project.')
@@ -38,9 +44,9 @@ parser.add_option('-n', '--namemap', dest='namemap',
                   help='A file containing a map of oldname|newname.')
 parser.add_option('-u', '--usermap', dest='usermap',
                   help='A file containing a map of olduser|newuser.')
-parser.add_option('-s', '--usersuffix', dest='usersuffix',
+parser.add_option('-s', '--usersuffix', dest='usersuffix', default='',
                   help='A suffix to apply to users not in usermap')
-parser.add_option('-p', '--prefix', dest='prefix',
+parser.add_option('-p', '--prefix', dest='prefix', default='',
                   help='A prefix to give all pages in the new wiki')
 parser.add_option('-i', '--inlinefixups', dest='inlinefixups',
                   help='Fix up wiki syntax inline (i.e. each version) rather than with a new revision at the end')
@@ -102,9 +108,9 @@ class ConvertWiki:
           newname = name
 
           if not namemap.has_key(name):
-            print "%s '%s': Skipping - not in name map" % (label, name)
-            return None
-          newname = namemap[name]
+            print "%s '%s': not in name map" % (label, name)
+          else:
+            newname = namemap[name]
 
           if (prefix):
             newname = "%s%s" % (prefix, newname)
@@ -132,10 +138,24 @@ class ConvertWiki:
             lines = f.readlines()
             f.close()
 
+          logformat = ("%(timestamp)d\t%(rev)08d\t%(edittype)s\t"
+            "%(pagename)s\t%(hostaddr)s\t%(hostname)s\t%(userid)s\t"
+            "%(extra)s\t%(description)s\n")
+          logdata = dict(
+            timestamp=timestamp, rev=rev, edittype='SAVE',
+            pagename=pagename, hostaddr=ipnr,
+            hostname=author, userid='',  # XXX: NOTE
+            extra='', description=comment)
           if attachedfilename is None:
-            lines.append("%d000000\t%08d\tSAVE\t%s\t%s\t%s\t%s\n" % (timestamp, rev, pagename, ipnr, author, comment))
+            if len(lines) == 0:
+                logdata['edittype'] = 'SAVENEW'
+            lines.append(logformat % logdata)
           else:
-            lines.append("%d000000\t%08d\tATTNEW\t%s\t%s\t%s\t%s\t%s\n" % (timestamp, rev, pagename, ipnr, author, comment, attachedfilename))
+            logdata.update(dict(edittype='ATTNEW',
+              description=attachedfilename,
+              rev=99999999,  # so the doc says
+              ))
+            lines.append(logformat % logdata)
           lines.sort()
           f = open(filename, "w")
           f.write("".join(lines))
@@ -177,6 +197,7 @@ class ConvertWiki:
           content = re.sub("\\[\\[PageOutline\\(([0-9]+)[^\\)]*\\)\\]\\]", "<<TableOfContents(\\1)>>", content)
           content = re.sub("\\[\\[BR\\]\\]", "<<BR>>", content)
           content = re.sub("\\[\\[TracNav\\(([^\\)]+)\\)\\]\\]", "<<Include(\\1)>>", content)
+          content = re.sub(r'\n\* ', '\n * ', content)  # list syntax fix
           return content
 
         db = self.env.get_db_cnx()
